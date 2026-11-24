@@ -17,17 +17,24 @@ if(typeof document!=='undefined'){
   permissions:{query:'query Access {\n  permissions {\n    access { hasLimitedPermissions }\n  }\n}',variables:'{}'},
   schema:{query:'query Schema {\n  __schema {\n    queryType { name }\n    types { name kind description }\n  }\n}',variables:'{}'}
  };
- const clearResult=()=>{$('result').textContent='';$('request-status').textContent='';};
+ let executing=false,generation=0;
+ const clearResult=()=>{generation++;$('result').textContent='';$('request-status').textContent='';};
  function choose(){const selected=examples[$('example').value];$('query-editor').value=selected.query;$('variables-editor').value=selected.variables;clearResult();}
- async function session(){const r=await fetch('/api/session',{credentials:'same-origin',cache:'no-store'});if(!r.ok)throw Error('Session indisponible.');const s=await r.json();$('session-status').textContent=s.authenticated?'Connecté · scope all · jetons conservés côté serveur':'Connectez-vous depuis la sample app, puis revenez ici.';$('execute').disabled=!s.authenticated;return s;}
+ async function session(){const r=await fetch('/api/session',{credentials:'same-origin',cache:'no-store'});if(!r.ok)throw Error('Session indisponible.');const s=await r.json();$('session-status').textContent=s.authenticated?'Connecté · scope all · jetons conservés côté serveur':'Connectez-vous depuis la sample app, puis revenez ici.';$('execute').disabled=executing||!s.authenticated;return s;}
  $('example').addEventListener('change',choose);
- $('query-form').addEventListener('submit',async event=>{event.preventDefault();$('execute').disabled=true;clearResult();try{
-  requestPayload($('query-editor').value,$('variables-editor').value);
-  const s=await session();if(!s.authenticated)return;$('execute').disabled=true;$('request-status').textContent='Requête en cours…';const started=performance.now();
-  const r=await executeQuery($('query-editor').value,$('variables-editor').value,s.csrf);
-  $('result').textContent=JSON.stringify(r.body,null,2);$('request-status').textContent=`HTTP ${r.status} · ${Math.round(performance.now()-started)} ms`+(r.body.errors?.length?` · ${r.body.errors.length} erreur(s) GraphQL`:'');
-  if(r.status===401)await session();
- }catch(error){$('request-status').textContent=error.name==='TimeoutError'?'Délai dépassé. Vérifiez la connexion puis réessayez.':error.message;}finally{try{await session();}catch{$('execute').disabled=true;}}});
+ $('query-form').addEventListener('submit',async event=>{
+  event.preventDefault();if(executing)return;executing=true;$('execute').disabled=true;clearResult();
+  const current=generation,query=$('query-editor').value,variables=$('variables-editor').value;
+  try{
+   requestPayload(query,variables);
+   const s=await session();if(!s.authenticated||current!==generation)return;
+   $('request-status').textContent='Requête en cours…';const started=performance.now();
+   const r=await executeQuery(query,variables,s.csrf);
+   if(current!==generation)return;
+   $('result').textContent=JSON.stringify(r.body,null,2);$('request-status').textContent=`HTTP ${r.status} · ${Math.round(performance.now()-started)} ms`+(r.body.errors?.length?` · ${r.body.errors.length} erreur(s) GraphQL`:'');
+  }catch(error){if(current===generation)$('request-status').textContent=error.name==='TimeoutError'?'Délai dépassé. Vérifiez la connexion puis réessayez.':error.message;
+  }finally{executing=false;try{await session();}catch{$('execute').disabled=true;}}
+ });
  $('clear').addEventListener('click',clearResult);
  $('recheck').addEventListener('click',()=>session().catch(e=>{$('session-status').textContent=e.message;}));
  window.addEventListener('pagehide',clearResult);window.addEventListener('pageshow',()=>session().catch(e=>{$('session-status').textContent=e.message;}));
