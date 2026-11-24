@@ -56,6 +56,9 @@ export function createApp(options: Options) {
   const configured = Boolean(options.clientId && !options.clientId.startsWith('YOUR_'));
   const assets: Record<string, [string, string]> = {
     '/': ['public/index.html', 'text/html; charset=utf-8'],
+    '/playground': ['public/playground.html', 'text/html; charset=utf-8'],
+    '/playground.mjs': ['public/playground.mjs', 'text/javascript; charset=utf-8'],
+    '/playground.css': ['public/playground.css', 'text/css; charset=utf-8'],
     '/app.js': ['public/app.js', 'text/javascript; charset=utf-8'],
     '/styles.css': ['public/styles.css', 'text/css; charset=utf-8'],
     '/sdk-player.js': ['node_modules/@deezer/sdk-player/build/umd/index.js', 'text/javascript; charset=utf-8'],

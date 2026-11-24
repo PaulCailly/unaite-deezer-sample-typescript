@@ -36,3 +36,4 @@ test('media relay requires login and rejects arbitrary hosts, redirects and malf
  const r=await f.req('/api/media','POST',{url,range:'bytes=0-2'});
  assert.equal(r.status,206);assert.equal(r.headers.get('content-type'),'audio/mpeg');assert.equal(r.headers.get('content-range'),'bytes 0-2/100');assert.deepEqual([...new Uint8Array(await r.arrayBuffer())],[0,1,2]);assert.equal(seen.length,1);
 });
+test('playground assets are reachable without exposing source or credentials',async t=>{const f=await fixture(t);for(const path of ['/playground','/playground.mjs','/playground.css']){const r=await f.req(path);assert.equal(r.status,200,path);assert.match(r.headers.get('cache-control')!,/no-store/);}assert.equal((await f.req('/src/app.ts')).status,404);});

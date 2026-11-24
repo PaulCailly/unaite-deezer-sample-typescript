@@ -4,7 +4,7 @@ Une base locale pour connecter un compte Deezer, chercher des titres avec Pipe /
 
 ## Démarrer
 
-Prérequis : **Node.js 22.18 ou plus récent**, npm, un client OAuth **Authorization Code `acNN`**, et son callback enregistré exactement sur **http://localhost:3000/callback**. Demandez les identifiants au staff. Le compte du portail de documentation est distinct du compte Deezer.
+Prérequis : **Node.js 22.18 ou plus récent**, npm, un client OAuth **Authorization Code `acNN`**, et son callback enregistré exactement sur **http://localhost:3000/callback**. Récupérez vos identifiants dans [Mes accès équipe](https://unaite.deezer.events/redeem) avec le code privé remis par le staff. Vous pouvez télécharger un `.env` prêt à placer à la racine du kit ; ne l’écrasez pas avec `.env.example`. Le compte du portail de documentation est distinct du compte Deezer.
 
 ```sh
 npm ci
@@ -89,3 +89,9 @@ Le code d’exemple est sous licence MIT. Les SDK et services Deezer restent sou
 ### Relais audio local
 
 Le relais audio exige une session connectée et le jeton CSRF. Il accepte uniquement les URL HTTPS signées de fichiers MP3 sous `cdnt-stream.dzcdn.net/media/`, conserve les plages `Range`, refuse les redirections et ne transmet aucun cookie ni jeton OAuth au CDN. Chaque réponse est limitée à 32 Mio et le délai réseau à 30 secondes. Les URL signées restent en mémoire ; ne les journalisez pas.
+
+## GraphQL Playground
+
+Après la connexion dans la sample app, ouvrez [localhost:3000/playground](http://localhost:3000/playground). L’éditeur utilise la même session OAuth et le relais local : aucun jeton à copier. Choisissez un exemple (profil, artistes, permissions ou introspection), modifiez la requête et ses variables JSON, puis cliquez sur **Exécuter**. La réponse complète affiche aussi les erreurs GraphQL et le statut HTTP. Une seule opération est prise en charge par requête. L’introspection peut être refusée selon les droits de l’API.
+
+Aucun historique ni résultat n’est enregistré. Les mutations peuvent modifier le compte connecté. Le code public ne contient aucun accès d’équipe. Tests de l’éditeur : `npm run test:playground` (Node 22.18+).
