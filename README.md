@@ -4,7 +4,7 @@ Une base locale pour connecter un compte Deezer, chercher des titres avec Pipe /
 
 ## Démarrer
 
-Prérequis : **Node.js 22.18 ou plus récent**, npm, un client OAuth **Authorization Code `acNN`**, et son callback enregistré exactement sur **http://localhost:3000/callback**. Demandez les identifiants au staff. Le compte du portail de documentation est distinct du compte Deezer.
+Prérequis : **Node.js 22.18 ou plus récent**, npm, un client OAuth **Authorization Code `acNN`**, et son callback enregistré exactement sur **http://localhost:3000/callback**. Récupérez vos identifiants dans [Mes accès équipe](https://unaite.deezer.events/redeem) avec le code privé remis par le staff. Vous pouvez télécharger un `.env` prêt à placer à la racine du kit ; ne l’écrasez pas avec `.env.example`. Le compte du portail de documentation est distinct du compte Deezer.
 
 ```sh
 npm ci
