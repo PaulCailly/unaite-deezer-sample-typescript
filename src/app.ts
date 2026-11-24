@@ -1,3 +1,4 @@
+import {fetchMedia, validMedia} from './media.ts';
 import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
 import type {IncomingMessage, ServerResponse} from 'node:http';
 import {readFileSync, existsSync} from 'node:fs';
@@ -18,7 +19,7 @@ type Session = {
   tokens?: {access: string; refresh?: string; expires: number};
   refreshing?: Promise<void>;
 };
-type Options = {clientId: string; appId?: string; root?: string; now?: () => number; transport?: Transport};
+type Options = {clientId: string; appId?: string; root?: string; now?: () => number; transport?: Transport; mediaTransport?: typeof fetchMedia};
 const random = () => randomBytes(32).toString('base64url');
 const equal = (a: string, b: string) => {
   const x = Buffer.from(a), y = Buffer.from(b);
@@ -151,8 +152,16 @@ export function createApp(options: Options) {
         return redirect('https://oauth.deezer.com/authorize?' + new URLSearchParams({client_id: options.clientId, response_type: 'code', scope: 'all', redirect_uri: ORIGIN + '/callback', state, code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256'}));
       }
       if (path === '/logout') {session.valid = false; session.generation++; delete session.tokens; delete session.pending; sessions.delete(id); setCookie('', 0); return send(200, {loggedOut: true});}
-      if (!['/api/token', '/api/refresh', '/api/pipe'].includes(path)) return send(404, {error: 'not_found'});
+      if (!['/api/token', '/api/refresh', '/api/pipe', '/api/media'].includes(path)) return send(404, {error: 'not_found'});
       const token = await access(session, path === '/api/refresh');
+      if (path === '/api/media') {
+        if (!validMedia(body.url, body.range ?? '')) throw new HttpError(400, 'invalid_media');
+        const media = await (options.mediaTransport || fetchMedia)(body.url, body.range || '');
+        if (!session.valid) throw new HttpError(401, 'login_required');
+        res.statusCode = media.status;
+        for (const [key,value] of Object.entries(media.headers)) res.setHeader(key,value);
+        return res.end(media.body);
+      }
       if (path === '/api/token') return send(200, {access_token: token});
       if (path === '/api/refresh') return send(200, {refreshed: true});
       if (typeof body.query !== 'string' || !body.query.trim() || (body.variables !== undefined && (!body.variables || typeof body.variables !== 'object' || Array.isArray(body.variables)))) throw new HttpError(400, 'invalid_query');

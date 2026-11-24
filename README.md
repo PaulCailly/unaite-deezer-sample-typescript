@@ -57,7 +57,7 @@ Rechargez la page après installation. Cherchez un titre, cliquez sur **Choisir*
 
 `POST /login` demande `scope=all` avec PKCE S256. Le callback vérifie un état à usage unique lié au navigateur. Les tokens restent dans une session serveur avec cookie HttpOnly. Le backend renouvelle l’accès avant expiration et conserve les refresh tokens hors du navigateur. Le SDK reçoit l’access token et les licences uniquement en mémoire ; ne les affichez pas, ne les loguez pas et ne les stockez pas dans localStorage.
 
-Les appels passent par `POST /api/pipe` sur la même origine pour éviter les blocages CORS. Les destinations externes sont fixes. Le petit adaptateur `fetch` du frontend redirige uniquement l’URL Pipe exacte appelée par le SDK ; les médias continuent à venir des CDN Deezer. Une erreur GraphQL peut arriver avec HTTP 200 : vérifiez aussi `errors`.
+Les appels passent par `POST /api/pipe` sur la même origine pour éviter les blocages CORS. Les destinations externes sont fixes. Le petit adaptateur `fetch` du frontend redirige l’URL Pipe exacte appelée par le SDK. Les MP3 signés du CDN `cdnt-stream.dzcdn.net` passent aussi par `POST /api/media`, car ce CDN ne fournit pas toujours les en-têtes CORS pour localhost. Une erreur GraphQL peut arriver avec HTTP 200 : vérifiez aussi `errors`.
 
 ## Vérifier votre installation
 
@@ -85,3 +85,7 @@ Puis dans le navigateur : connexion → recherche → titre complet → pause/re
 Sample **local uniquement**, sessions en mémoire perdues au redémarrage. La déconnexion ferme la session de cette application ; elle ne déconnecte pas nécessairement votre session SSO Deezer. Pour héberger votre projet, il faut adapter HTTPS/cookies Secure, stockage de sessions, contrôle d’accès, limites de trafic et callback enregistré. Ne publiez jamais `.env`, le jeton npm, les cookies ou des captures contenant des tokens.
 
 Le code d’exemple est sous licence MIT. Les SDK et services Deezer restent soumis à leurs propres conditions et droits d’accès. Ce dépôt ne redistribue pas le SDK.
+
+### Relais audio local
+
+Le relais audio exige une session connectée et le jeton CSRF. Il accepte uniquement les URL HTTPS signées de fichiers MP3 sous `cdnt-stream.dzcdn.net/media/`, conserve les plages `Range`, refuse les redirections et ne transmet aucun cookie ni jeton OAuth au CDN. Chaque réponse est limitée à 32 Mio et le délai réseau à 30 secondes. Les URL signées restent en mémoire ; ne les journalisez pas.

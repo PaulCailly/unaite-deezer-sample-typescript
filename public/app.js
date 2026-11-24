@@ -29,7 +29,7 @@ async function gql(query, variables = {}) {
   return result.data;
 }
 // The published SDK has a fixed Pipe URL. Relay only that exact endpoint.
-// Media/CDN traffic remains direct. Never forward arbitrary caller-supplied URLs.
+// Signed MP3 files use a second, strictly restricted local relay.
 window.fetch = async (input, init) => {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
   if (url === 'https://pipe.deezer.com/api') {
@@ -37,6 +37,13 @@ window.fetch = async (input, init) => {
     const parsed = JSON.parse(body);
     return originalFetch('/api/pipe', {method: 'POST', credentials: 'same-origin',
       headers: {'Content-Type': 'application/json', 'X-CSRF-Token': session.csrf}, body: JSON.stringify({query: parsed.query, variables: parsed.variables || {}})});
+  }
+  if (url.startsWith('https://cdnt-stream.dzcdn.net/media/')) {
+    const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : {}));
+    return originalFetch('/api/media', {method: 'POST', credentials: 'same-origin',
+      signal: init?.signal || (input instanceof Request ? input.signal : undefined),
+      headers: {'Content-Type': 'application/json', 'X-CSRF-Token': session.csrf},
+      body: JSON.stringify({url, range: headers.get('Range') || ''})});
   }
   return originalFetch(input, init);
 };
@@ -70,7 +77,7 @@ async function ensurePlayer() {
   });
   instance.subscribeOnPlayerError(() => fail(new Error('playback_failed')));
   await instance.init({
-    app: {id: session.appId, name: 'Unaite Deezer Sample', version: '1.0.0'}, debug: false,
+    app: {id: session.appId, name: 'Unaite Deezer Sample', version: '1.0.1'}, debug: false,
     userProvider: async () => {
       const data = await gql('query PlayerUser { me { user { id } } tokens { mediaServiceLicenseToken { token expirationDate } liveToken { token expirationDate } recToken { token expirationDate } } }');
       return {id: data.me.user.id, licenseToken: data.tokens.mediaServiceLicenseToken, liveToken: data.tokens.liveToken, authToken: data.tokens.recToken};
@@ -92,6 +99,7 @@ async function ensurePlayer() {
 async function selectTrack(track) {
   if (preparing) return;
   preparing = true;
+  $('playback-status').textContent = 'Préparation du lecteur…';
   $('message').textContent = ''; $('play').disabled = true; $('pause').disabled = true;
   try {
     if (player) player.pause();
