@@ -94,7 +94,7 @@ export function createApp(options: Options) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'same-origin');
     res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.deezer.com https://*.dzcdn.net wss://live.deezer.com; media-src blob: https://*.deezer.com https://*.dzcdn.net; worker-src blob:; form-action 'self' https://oauth.deezer.com; frame-ancestors 'none'; base-uri 'none'");
+    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.deezer.com https://*.dzcdn.net wss://live.deezer.com; media-src blob: https://*.deezer.com https://*.dzcdn.net; worker-src blob:; form-action 'self' https://oauth.deezer.com https://account.deezer.com; frame-ancestors 'none'; base-uri 'none'");
     const send = (status: number, data: unknown) => {res.statusCode = status; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data));};
     const redirect = (location: string) => {res.statusCode = 303; res.setHeader('Location', location); res.end();};
     const setCookie = (id: string, age = 43200) => res.setHeader('Set-Cookie', `${COOKIE}=${id}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${age}`);
